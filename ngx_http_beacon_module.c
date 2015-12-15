@@ -226,9 +226,10 @@ not_found:
 	set_cookie->hash = 1;
 	ngx_str_set(&set_cookie->key, "Set-Cookie");
 	size_t domain_len = get_root_domain(&domain,&r->headers_in.host->value);
-	beacon_id.data = ngx_pnalloc(r->pool,64);
-	encode_beacon_id.data = ngx_pnalloc(r->pool,64);
+	beacon_id.data = ngx_pcalloc(r->pool,64);
+	encode_beacon_id.data = ngx_pcalloc(r->pool,64);
 	gen_beacon_id(&beacon_id,r);
+	ngx_log_error(NGX_LOG_EMERG, r->connection->log, 0, (char *)beacon_id.data);
 	ngx_encode_base64url(&encode_beacon_id,&beacon_id);
 	set_cookie->value.len = sizeof("beacon_id=") - 1
 							  + encode_beacon_id.len
@@ -240,10 +241,10 @@ not_found:
 							  + domain_len
 							  + sizeof(";path=") - 1
 							  + sizeof("/") - 1;
-	u_char *pp = ngx_pnalloc(r->pool, set_cookie->value.len);
+	u_char *pp = ngx_pcalloc(r->pool, set_cookie->value.len);
 
 	if (pp == NULL) {
-		ngx_log_error(NGX_LOG_EMERG, r->connection->log, 0, "ngx_pnalloc set_cookie space failed !!!");
+		ngx_log_error(NGX_LOG_EMERG, r->connection->log, 0, "ngx_pcalloc set_cookie space failed !!!");
 		}
 
 	set_cookie->value.data = pp;
@@ -272,7 +273,7 @@ void gen_beacon_id(ngx_str_t *beacon_id,ngx_http_request_t *r){
 	ngx_gettimeofday(&tv);
 	us = tv.tv_sec * 1000000+tv.tv_usec;
 
-	loc_addr.data = ngx_pnalloc(r->pool, 64);
+	loc_addr.data = ngx_pcalloc(r->pool, 64);
 	ngx_connection_local_sockaddr(r->connection, NULL, 0);
 	loc_addr.len = ngx_sock_ntop(r->connection->local_sockaddr, r->connection->local_socklen,loc_addr.data,NGX_INET_ADDRSTRLEN, 0);
 
